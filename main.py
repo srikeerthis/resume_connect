@@ -11,6 +11,7 @@ dotenv.load_dotenv()
 # Set up OpenAI API key
 openai_key = os.getenv("OPENAI_API_KEY")
 openai_prompt = os.getenv("OPENAI_PROMPT")
+
 # Connect to MongoDB
 client = MongoClient('localhost:27017')  # Replace with your MongoDB connection string
 db = client['hired_db']  # Database
@@ -26,14 +27,14 @@ def extract_resume_text(uploaded_file):
         return text
     return None
 
-# Helper function to analyze resume using OpenAI
+# Function for analyzing resume using OpenAI
 def analyze_resume(resume_text):
-    client = OpenAI()
+    openai_client = OpenAI()
     if resume_text:
         prompt = openai_prompt.format(resume_text=resume_text)
         
         # Call the OpenAI API
-        completion = client.chat.completions.create(
+        completion = openai_client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": "You are a helpful assistant that analyzes resumes."},
@@ -56,73 +57,111 @@ def hash_file(file):
 
 # Streamlit UI
 st.title('Hired Simple Version')
-st.subheader('Submit your Resume and Answer Questions')
+# Sidebar for selecting user type
+user_type = st.sidebar.radio("Are you a:", ("Candidate", "Recruiter"))
 
-# Candidate Info
-candidate_name = st.text_input('Name')
-candidate_email = st.text_input('Email')
+### Candidate Session ###
+if user_type == "Candidate":
 
-# Resume Upload
-uploaded_file = st.file_uploader("Upload your resume (PDF)", type=["pdf"])
+    st.subheader('Submit your Resume and Answer Questions')
 
-# Use session state to store the analysis result so that it only happens once when the resume is uploaded
-if "analysis" not in st.session_state:
-    st.session_state.analysis = None
-    st.session_state.resume_hash = None
+    # Candidate Info
+    candidate_name = st.text_input('Name')
+    candidate_email = st.text_input('Email')
 
-# If a resume is uploaded, calculate its hash
-if uploaded_file:
-    current_resume_hash = hash_file(uploaded_file)
+    # Resume Upload
+    uploaded_file = st.file_uploader("Upload your resume (PDF)", type=["pdf"])
 
-    # Reanalyze if the resume has changed
-    if current_resume_hash != st.session_state.resume_hash:
-        st.session_state.resume_hash = current_resume_hash  # Update hash in session state
-        uploaded_file.seek(0)  # Reset file pointer after hashing
-        resume_text = extract_resume_text(uploaded_file)
-        
-        if resume_text:
-            analysis = analyze_resume(resume_text)
-            st.session_state.analysis = analysis
-    else:
-        st.success("Resume unchanged, no reanalysis needed.")
+    # Use session state to store the analysis result so that it only happens once when the resume is uploaded
+    if "analysis" not in st.session_state:
+        st.session_state.analysis = None
+        st.session_state.resume_hash = None
 
-# # Resume Analysis - only perform if it's the first time or the resume is re-uploaded
-# if uploaded_file and resume_text and st.session_state.analysis is None:
-#     analysis = analyze_resume(resume_text)
-#     st.session_state.analysis = analysis
+    # If a resume is uploaded, calculate its hash
+    if uploaded_file:
+        current_resume_hash = hash_file(uploaded_file)
 
-# Display the analysis in a non-editable text area
-if st.session_state.analysis:
-    st.text_area("Resume Analysis", st.session_state.analysis, height=200, disabled=True)
+        # Reanalyze if the resume has changed
+        if current_resume_hash != st.session_state.resume_hash:
+            st.session_state.resume_hash = current_resume_hash  # Update hash in session state
+            uploaded_file.seek(0)  # Reset file pointer after hashing
+            resume_text = extract_resume_text(uploaded_file)
+            
+            if resume_text:
+                analysis = analyze_resume(resume_text)
+                st.session_state.analysis = analysis
+        else:
+            st.success("Resume unchanged, no reanalysis needed.")
 
-# Questions
-st.subheader("Please answer the following questions:")
-question1 = st.text_input("Do you require sponsorship to work in the US?")
-question2 = st.text_input("Are you currently in the USA")
-question3 = st.text_input("What is your expected salary range?")
+    # # Resume Analysis - only perform if it's the first time or the resume is re-uploaded
+    # if uploaded_file and resume_text and st.session_state.analysis is None:
+    #     analysis = analyze_resume(resume_text)
+    #     st.session_state.analysis = analysis
 
-# Submit button
-if st.button('Submit'):
-    if candidate_name and candidate_email and uploaded_file and question1 and question2 and question3:
-        # Convert uploaded resume to binary
-        resume_binary = Binary(uploaded_file.read())
+    # Display the analysis in a non-editable text area
+    if st.session_state.analysis:
+        st.text_area("Resume Analysis", st.session_state.analysis, height=200, disabled=True)
 
-        # Create document for MongoDB
-        resume_data = {
-            "candidate_name": candidate_name,
-            "email": candidate_email,
-            "resume": resume_binary,  # Store resume as binary
-            "answers": {
-                "question1": question1,
-                "question2": question2,
-                "question3": question3
-            },
-            "analysis": st.session_state.analysis  # Store the analysis generated by OpenAI
+    # Questions
+    st.subheader("Please answer the following questions:")
+    question1 = st.text_input("Do you require sponsorship to work in the US?")
+    question2 = st.text_input("Are you currently in the USA")
+    question3 = st.text_input("What is your expected salary range?")
+
+    # Submit button
+    if st.button('Submit'):
+        if candidate_name and candidate_email and uploaded_file and question1 and question2 and question3:
+            # Convert uploaded resume to binary
+            resume_binary = Binary(uploaded_file.read())
+
+            # Create document for MongoDB
+            resume_data = {
+                "candidate_name": candidate_name,
+                "email": candidate_email,
+                "resume": resume_binary,  # Store resume as binary
+                "answers": {
+                    "question1": question1,
+                    "question2": question2,
+                    "question3": question3
+                },
+                "analysis": st.session_state.analysis  # Store the analysis generated by OpenAI
+            }
+
+            # Insert into MongoDB
+            collection.insert_one(resume_data)
+            
+            st.success("Your resume and answers have been submitted successfully!")
+        else:
+            st.error("Please fill in all the fields and upload a resume.")
+
+### Recruiter Session ###
+elif user_type == "Recruiter":
+    st.header("Search for Resumes")
+
+    # Search input
+    search_term = st.text_input("Search by candidate name, email, or keyword in analysis")
+
+    # Search button
+    if st.button("Search"):
+        # Query the MongoDB collection based on search term
+        query = {
+            "$or": [
+                {"candidate_name": {"$regex": search_term, "$options": "i"}},
+                {"email": {"$regex": search_term, "$options": "i"}},
+                {"analysis": {"$regex": search_term, "$options": "i"}}
+            ]
         }
+        results = list(collection.find(query))
 
-        # Insert into MongoDB
-        collection.insert_one(resume_data)
-        
-        st.success("Your resume and answers have been submitted successfully!")
-    else:
-        st.error("Please fill in all the fields and upload a resume.")
+        if results:
+            st.write(f"Found {len(results)} results:")
+            for result in results:
+                st.subheader(f"Candidate: {result['candidate_name']}")
+                st.write(f"Email: {result['email']}")
+                st.write(f"Analysis: {result['analysis']}")
+                st.write(f"Q1: {result['answers']['question1']}")
+                st.write(f"Q2: {result['answers']['question2']}")
+                st.write(f"Q3: {result['answers']['question3']}")
+                st.write("---")
+        else:
+            st.write("No results found for your search term.")
