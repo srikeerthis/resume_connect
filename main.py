@@ -21,9 +21,9 @@ dotenv.load_dotenv()
 # Set up OpenAI API key
 openai_key = os.getenv("OPENAI_API_KEY")
 openai_prompt = os.getenv("OPENAI_PROMPT")
-
+mongo_uri = os.getenv("MONGO_URI")
 # Connect to MongoDB
-client = MongoClient('localhost:27017')  # Replace with your MongoDB connection string
+client = MongoClient(mongo_uri)  # Replace with your MongoDB connection string
 db = client['hired_db']  # Database
 collection = db['resumes']  # Collection
 
