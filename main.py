@@ -10,6 +10,12 @@ import numpy as np
 from bson import Binary
 import re
 from sklearn.metrics.pairwise import cosine_similarity
+from streamlit.components.v1 import html
+
+
+# html(
+#     '<img src="dino.jpg" alt="Description of the image" />'
+# )
 
 dotenv.load_dotenv()
 # Set up OpenAI API key
@@ -94,6 +100,70 @@ def clean_resume_text(resume_text):
 
 # Streamlit UI
 st.title('Hired Simple Version')
+
+st.markdown("""
+    <style>
+    body {
+        background-color: #1A0800;
+        color: #E8E8E8;
+    }
+    .stAppHeader{
+        background-color: #2BFF00
+                }
+    .st-emotion-cache-1r4qj8v{
+        background-color: #1A0800;    
+            }        
+    .st-emotion-cache-ue6h4q {
+        color: #2BFF00;
+                    }
+            .st-emotion-cache-12h5x7g.e1nzilvr5,.st-emotion-cache-1rsyhoq.e1nzilvr5 p, .st-emotion-cache-1rsyhoq.e1nzilvr5 ul{
+            color: white;}
+    h1, h2, h3, h4, .st-emotion-cache-12h5x7g{
+        color: #2BFF00;
+    }
+    .stTextInput, .stTextArea, .stFileUploader {
+        background-color: #2C3E50;
+        color: #ECF0F1;
+        border: 1px solid #2BFF00;
+        padding: 10px;
+        border-radius: 5px;
+    }
+    .stButton button {
+        background-color: #E74C3C;
+        color: #FFF;
+        border: none;
+        border-radius: 5px;
+        padding: 10px 20px;
+        font-size: 16px;
+        transition: background-color 0.3s ease;
+    }
+    .stButton button:hover {
+        background-color: #C0392B;
+    }
+    .stRadio > div {
+        color: #E8E8E8;
+    }
+            
+    .stSidebar{
+        background-color: #424242;
+            }
+    .sidebar .sidebar-content {
+        background-color: #2BFF00;
+        color: #ECF0F1;
+    }
+    .sidebar .sidebar-content .stRadio {
+        color: #ECF0F1;
+    }
+    .stAlert {
+        background-color: #27AE60;
+        color: white;
+    }
+    .stTextInput > div, .stFileUploader > div {
+        color: #FFF;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # Sidebar for selecting user type
 user_type = st.sidebar.radio("Are you a:", ("Candidate", "Recruiter"))
 
@@ -208,7 +278,7 @@ elif user_type == "Recruiter":
                 for resume, similarity in similar_resumes[:5]:  # Show top 5 matches
                     st.subheader(f"Candidate: {resume['candidate_name']} (Similarity: {similarity:.2f})")
                     st.write(f"Email: {resume['email']}")
-                    st.write(f"Resume Text: {resume['analysis'][:1000]}...")  # Show first 500 chars
+                    st.write(f"Resume Text: {resume['analysis']}...")  # Show first 500 chars
                     st.write("---")
             else:
                 st.write("No resumes found in the database.")
