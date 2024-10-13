@@ -9,9 +9,13 @@ Lessume takes a PDF file of the users resume and interprets the text. It then or
   python3 -m venv env
   ```
 - Open virtual environment
-
+  bash:
   ```
   source  env/bin/activate
+  ```
+  powershell:
+  ```
+  .\env\Scripts\Activate
   ```
 
 - install dependencies
