@@ -99,7 +99,7 @@ def clean_resume_text(resume_text):
     return cleaned_text
 
 # Streamlit UI
-st.title('Hired Simple Version')
+st.title('Lessume')
 
 st.markdown("""
     <style>
