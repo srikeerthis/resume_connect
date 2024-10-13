@@ -10,10 +10,13 @@ Lessume takes a PDF file of the users resume and interprets the text. It then or
   ```
 - Open virtual environment
   bash:
+
   ```
   source  env/bin/activate
   ```
+
   powershell:
+
   ```
   .\env\Scripts\Activate
   ```
@@ -23,3 +26,10 @@ Lessume takes a PDF file of the users resume and interprets the text. It then or
   ```
   pip3 install -r requirements.txt
   ```
+
+- Create .env
+
+```
+OPENAI_KEY = "add key"
+OPENAI_PROMPT = "add prompt"
+```
