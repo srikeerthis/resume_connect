@@ -1,4 +1,4 @@
-# Lessume
+# Candidate Search Application  - Lessume
 
 Lessume takes a PDF file of the users resume and interprets the text. It then organizes the information in a database with which companies and recruiters can use to search for the right applicants.
 
